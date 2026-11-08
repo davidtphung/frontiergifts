@@ -55,3 +55,8 @@ docs/             design deliverables (02 is generated)
 - The Kids safeguarding wording and the Worship/Prayer pastoral-guidance wording.
 - A pilot to check reliability per gift and to calibrate thresholds.
 - The tagline. The website and the brief differ: "Renewing… modern culture" vs "Revealing… culture".
+
+## Deploy (GitHub Pages)
+`.github/workflows/deploy-pages.yml` tests, builds, and deploys on every push to `claw` (or manually from the Actions tab). One-time setup by a repo admin: **Settings → Pages → Build and deployment → Source: GitHub Actions**. The site is then served at `https://davidtphung.github.io/frontiergifts/`.
+
+To share without hosting, run `npm run build:share`, which writes one self-contained `share/frontier-gifts.html`.
