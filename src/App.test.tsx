@@ -1,135 +1,116 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import App from './App';
+import App, { buildSteps } from './App';
 
 let fetchSpy: ReturnType<typeof vi.fn>;
-let beaconSpy: ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
   fetchSpy = vi.fn(() => Promise.reject(new Error('network should not be used')));
   vi.stubGlobal('fetch', fetchSpy);
-  beaconSpy = vi.fn();
-  Object.defineProperty(navigator, 'sendBeacon', { value: beaconSpy, configurable: true });
+  Object.defineProperty(navigator, 'sendBeacon', { value: vi.fn(), configurable: true });
   window.localStorage.clear();
   window.scrollTo = vi.fn() as never;
 });
-afterEach(() => {
-  vi.unstubAllGlobals();
-});
+afterEach(() => vi.unstubAllGlobals());
 
-const primary = (name: RegExp) => screen.getByRole('button', { name });
+const btn = (name: RegExp) => screen.getByRole('button', { name });
 
-/** Answer each screen with the first option (or skip), until results. */
+/** Rate every statement "Very like me" (or pick the first scenario option) until results. */
 async function walkToResults(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(primary(/^begin$/i));
+  await user.click(btn(/^begin$/i));
   for (let i = 0; i < 40; i++) {
-    if (screen.queryByText(/here are a few places your story could connect/i)) return;
-    const radios = screen.queryAllByRole('radio');
-    const checks = screen.queryAllByRole('checkbox');
-    if (radios.length) await user.click(radios[0]);
-    else if (checks.length) await user.click(checks[0]);
-    const next = screen.queryByRole('button', { name: /^(continue|see my results)$/i });
-    const skip = screen.queryByRole('button', { name: /^skip$/i });
-    if (!radios.length && !checks.length && skip) await user.click(skip);
-    else if (next) await user.click(next);
+    if (screen.queryByRole('heading', { name: /your gifts, and where they could serve/i })) return;
+    const groups = screen.queryAllByRole('radiogroup');
+    for (const g of groups) {
+      const strong = within(g).queryByRole('radio', { name: /very like me/i });
+      await user.click(strong ?? within(g).getAllByRole('radio')[0]);
+    }
+    await user.click(screen.getByRole('button', { name: /^(continue|see my gifts)$/i }));
   }
   throw new Error('never reached results');
 }
 
-describe('participant experience', () => {
-  it('shows the privacy notice and shared heart before starting', () => {
-    render(<App />);
-    expect(screen.getByText(/nothing is sent anywhere unless you review it/i)).toBeInTheDocument();
-    expect(screen.getByText(/we serve because we belong to one another in christ/i)).toBeInTheDocument();
+describe('gifts inventory flow', () => {
+  it('has a chapter card before each chapter and 13 answer screens', () => {
+    const steps = buildSteps();
+    expect(steps.filter((s) => s.type === 'screen')).toHaveLength(13);
+    expect(steps.filter((s) => s.type === 'chapter').map((s) => (s as { chapter: string }).chapter)).toEqual(['notice', 'alive', 'care', 'others']);
   });
 
-  it('can be completed with the keyboard alone', async () => {
+  it('can be started and answered with the keyboard alone', async () => {
     const user = userEvent.setup();
     render(<App />);
-    // Tab to Begin and press Enter
     let guard = 0;
     while (document.activeElement?.textContent?.trim().toLowerCase() !== 'begin' && guard++ < 10) await user.tab();
     await user.keyboard('{Enter}');
-    expect(screen.getByRole('heading', { name: /where are you with frontier/i })).toHaveFocus();
-    // choose an option with the keyboard
-    await user.tab();
-    await user.keyboard(' ');
-    expect(screen.getAllByRole('radio')[0]).toBeChecked();
-    // move to Continue and activate
-    const cont = primary(/^continue$/i);
-    while (document.activeElement !== cont && guard++ < 30) await user.tab();
-    await user.keyboard('{Enter}');
     expect(screen.getByRole('heading', { name: /what do you notice/i })).toHaveFocus();
+    await user.keyboard('{Tab}{Tab}{Enter}'); // Back, Continue
+    expect(screen.getByRole('heading', { name: /how much is each of these like you/i })).toHaveFocus();
+    // first rating group: focus the first point, then use Space and the arrow keys
+    const first = screen.getAllByRole('radiogroup')[0];
+    within(first).getAllByRole('radio')[0].focus();
+    await user.keyboard(' ');
+    expect(within(first).getByRole('radio', { name: /not like me/i })).toBeChecked();
+    // Arrow-key movement along the scale is native radio behavior; jsdom doesn't
+    // emulate it reliably, so it is checked in a real browser instead.
   });
 
-  it('asks for an answer or skip instead of silently advancing', async () => {
+  it('asks for ratings (or skip) instead of silently advancing', async () => {
     const user = userEvent.setup();
     render(<App />);
-    await user.click(primary(/^begin$/i));
-    await user.click(primary(/^continue$/i));
-    expect(screen.getByRole('alert')).toHaveTextContent(/skip/i);
+    await user.click(btn(/^begin$/i));
+    await user.click(btn(/^continue$/i)); // chapter card
+    await user.click(btn(/^continue$/i));
+    expect(screen.getByRole('alert')).toHaveTextContent(/not sure/i);
+    await user.click(btn(/^skip$/i));
+    expect(screen.getByRole('heading', { name: /what do you most often find yourself doing/i })).toBeInTheDocument();
   });
 
-  it('enforces multi-select maximums with a clear message', async () => {
+  it('never asks about teams, roles, or contact details', async () => {
     const user = userEvent.setup();
     render(<App />);
-    await user.click(primary(/^begin$/i));
-    await user.click(primary(/^skip$/i)); // familiarity
-    await user.click(primary(/^continue$/i)); // chapter card
-    const boxes = screen.getAllByRole('checkbox');
-    await user.click(boxes[0]);
-    await user.click(boxes[1]);
-    expect(boxes[2]).toBeDisabled();
-    expect(screen.getByText(/2 of 2 chosen/i)).toHaveTextContent(/deselect one/i);
+    await user.click(btn(/^begin$/i));
+    for (let i = 0; i < 17; i++) {
+      expect(screen.queryByText(/tech and av|welcome team|kids ministry|prayer ministry|worship team/i)).toBeNull();
+      expect(screen.queryByLabelText(/email|name/i)).toBeNull();
+      const skip = screen.queryByRole('button', { name: /^skip$/i });
+      await user.click(skip ?? btn(/^continue$/i));
+    }
   });
 
-  it('shows results without asking for contact details and makes no network requests', async () => {
+  it('shows a gift profile and team recommendations, with no network requests', async () => {
     const user = userEvent.setup();
     render(<App />);
     await walkToResults(user);
-    expect(screen.queryByLabelText(/email/i)).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /your gift profile/i })).toBeInTheDocument();
+    expect(screen.getAllByText(/^(strong|present|emerging)$/i).length).toBe(7);
+    expect(screen.getAllByText(/recommended/i).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/%/)).toBeNull();
     expect(fetchSpy).not.toHaveBeenCalled();
-    expect(beaconSpy).not.toHaveBeenCalled();
-    expect(window.localStorage.length).toBe(0); // nothing persisted without opt-in
+    expect(window.localStorage.length).toBe(0);
   });
 
-  it('requires explicit consent and still sends nothing when no endpoint is configured', async () => {
+  it('skipping everything gives an honest "need more answers" result', async () => {
     const user = userEvent.setup();
     render(<App />);
-    await walkToResults(user);
-    await user.click(primary(/share with frontier/i));
-    await user.click(primary(/18 or older/i));
-    await user.click(primary(/review what i’ll share/i));
-    expect(screen.getByRole('alert')).toHaveTextContent(/tick/i);
-    await user.click(screen.getByLabelText(/share my summary with frontier/i));
-    await user.click(primary(/review what i’ll share/i));
-    expect(screen.getByText(/exactly what would be shared/i)).toBeInTheDocument();
-    await user.click(primary(/^finish$/i));
-    expect(screen.getByText(/nothing was sent/i)).toBeInTheDocument();
-    expect(fetchSpy).not.toHaveBeenCalled();
-  });
-
-  it('does not collect contact details from someone under 18', async () => {
-    const user = userEvent.setup();
-    render(<App />);
-    await walkToResults(user);
-    await user.click(primary(/share with frontier/i));
-    await user.click(primary(/under 18/i));
-    expect(screen.getByText(/parent or guardian/i)).toBeInTheDocument();
-    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    await user.click(btn(/^begin$/i));
+    for (let i = 0; i < 17; i++) {
+      const skip = screen.queryByRole('button', { name: /^skip$/i });
+      await user.click(skip ?? btn(/^continue$/i));
+    }
+    expect(screen.getByText(/we need a few more answers/i)).toBeInTheDocument();
   });
 
   it('lets participants correct recommendations and browse every team', async () => {
     const user = userEvent.setup();
     render(<App />);
     await walkToResults(user);
-    await user.click(primary(/show me other teams/i));
-    const list = screen.getAllByRole('listitem').filter((li) => within(li).queryByRole('heading', { name: /kids ministry/i }));
-    const kids = list[0];
-    await user.click(within(kids).getByRole('button', { name: /this feels like me/i }));
-    expect(within(kids).getByRole('button', { name: /this feels like me/i })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getAllByRole('heading', { name: /kids ministry/i }).length).toBeGreaterThan(1); // now also a card
+    await user.click(btn(/show me other teams/i));
+    const items = screen.getAllByRole('listitem').filter((li) => within(li).queryByRole('heading', { name: /^kids ministry$/i }));
+    await user.click(within(items[0]).getByRole('button', { name: /this feels like me/i }));
+    expect(within(items[0]).getByRole('button', { name: /this feels like me/i })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getAllByRole('heading', { name: /^kids ministry$/i }).length).toBeGreaterThan(1);
   });
 
   it('only saves to the device after opting in, and erases when turned off', async () => {

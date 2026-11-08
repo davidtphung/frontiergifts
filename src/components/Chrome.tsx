@@ -90,7 +90,7 @@ export function Welcome({
             <button className="btn btn--ghost-light" onClick={onResume}>Continue where you left off</button>
           )}
         </div>
-        <p className="hero__meta">{site.estimatedMinutes} · 12 short questions</p>
+        <p className="hero__meta">{site.estimatedMinutes} · 21 statements and 7 everyday moments</p>
       </section>
 
       <section className="welcome__body">
@@ -108,7 +108,7 @@ export function Welcome({
               <li key={p}>{p}</li>
             ))}
           </ul>
-          <p className="hint">This is a starting point for a conversation—not a test, a label, or an assignment.</p>
+          <p className="hint">Your results describe gifts to keep discerning with others—they’re a starting point, not a final word.</p>
         </div>
       </section>
     </div>

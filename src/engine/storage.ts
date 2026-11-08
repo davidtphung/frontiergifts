@@ -5,12 +5,11 @@ import type { Answers, FeedbackMap } from './types';
  * turns on "Save on this device". Every access is wrapped because storage can
  * be unavailable (private mode, blocked site data).
  */
-const KEY = 'frontiergifts:v1';
+const KEY = 'frontiergifts:v2';
 
 export interface SavedState {
   answers: Answers;
   feedback: FeedbackMap;
-  deeper: boolean;
   step: number;
   savedAt: string;
 }

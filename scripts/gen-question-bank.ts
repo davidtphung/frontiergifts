@@ -1,76 +1,60 @@
 /**
  * Regenerates docs/02-question-bank.md from src/content/questions.ts so the
- * matrix never drifts from the live configuration.
+ * item bank documentation never drifts from the live configuration.
  *   npm run docs:questions
  */
 import { writeFileSync } from 'node:fs';
-import { QUESTION_BANK_VERSION, questions } from '../src/content/questions';
-import type { Condition, SignalBundle } from '../src/content/types';
+import { QUESTION_BANK_VERSION, allItems, screens } from '../src/content/questions';
+import { scoringConfig } from '../src/content/scoring';
+import { gifts } from '../src/content/teams';
 
-const fmtBundle = (b?: SignalBundle) => {
-  if (!b) return '—';
-  const parts: string[] = [];
-  const add = (label: string, rec?: Record<string, number | undefined>) => {
-    const e = Object.entries(rec ?? {});
-    if (e.length) parts.push(`${label}: ${e.map(([k, v]) => `${k} ${v}`).join(', ')}`);
-  };
-  add('team', b.teams);
-  add('gift', b.gifts);
-  add('skill', b.skills);
-  add('learn', b.learning);
-  if (b.readiness) parts.push(`readiness: ${b.readiness}`);
-  if (b.practical?.length) parts.push(`practical: ${b.practical.join(', ')}`);
-  return parts.join('; ') || '—';
-};
-const fmtCond = (c: Condition): string =>
-  'anyOf' in c
-    ? c.anyOf.map(fmtCond).join(' OR ')
-    : 'allOf' in c
-      ? c.allOf.map(fmtCond).join(' AND ')
-      : 'includesAny' in c
-        ? `${c.q} ∈ {${c.includesAny.join(', ')}}`
-        : `${c.q} ≥ ${c.atLeast}`;
 const esc = (s: string) => s.replace(/\|/g, '\\|');
-
 const out: string[] = [
-  '# C. Question bank',
+  '# C. Question bank (spiritual-gifts inventory)',
   '',
   `Generated from \`src/content/questions.ts\` (${QUESTION_BANK_VERSION}). Do not edit by hand — run \`npm run docs:questions\`.`,
   '',
-  'Tiers: **core** (12, everyone), **followup** (max 4 shown, after chapter 4, ranked by relevance), **deeper** (optional path after results).',
+  'Every participant sees the same 13 screens in the same order: 6 rating blocks (21 statements) and 7 scenarios. There is no branching. No item mentions a team, role, task type, interest in a role, or experience in a role; a test enforces this.',
   '',
-  '## Summary',
+  `Rating scale (0–4): ${scoringConfig.scale.map((s, i) => `${i} = ${s}`).join(' · ')} · plus “Not sure” (treated as missing).`,
   '',
-  '| ID | Tier | Chapter | Format | Prompt | Skippable |',
-  '|---|---|---|---|---|---|',
-  ...questions.map((q) => `| \`${q.id}\` | ${q.tier} | ${q.chapter} | ${q.format}${q.maxSelections ? ` (max ${q.maxSelections})` : ''} | ${esc(q.prompt)} | ${q.skippable ? 'yes' : 'no'} |`),
+  '## Statements by gift',
+  '',
+  'Three per gift: two self-perception statements and one “others observe” statement. Statements are interleaved across screens so no screen is about a single gift.',
   '',
 ];
-
-for (const q of questions) {
-  out.push(`## \`${q.id}\` — ${esc(q.prompt)}`, '');
-  out.push(`- **Tier / chapter / format:** ${q.tier} / ${q.chapter} / ${q.format}${q.maxSelections ? `, max ${q.maxSelections}` : ''}${q.maxLength ? `, ≤${q.maxLength} chars` : ''}`);
-  if (q.helper) out.push(`- **Helper:** ${q.helper}`);
-  if (q.storyLine) out.push(`- **Story line:** ${q.storyLine}`);
-  out.push(`- **Why we ask:** ${q.why}`);
-  out.push(`- **What it does NOT prove:** ${q.notProves}`);
-  out.push(`- **Ambiguity / bias:** ${q.ambiguity}`);
-  out.push(`- **Branching:** ${q.trigger ? `shown if ${fmtCond(q.trigger)}${q.followupTeam ? `; ranked by ${q.followupTeam} relevance` : ''}` : q.tier === 'deeper' ? 'optional deeper path only' : 'always shown'}`);
-  if (q.barometer) {
-    out.push(`- **Anchors:** ${q.barometer.anchors.join(' → ')} (0–4, plus “Not sure”)`);
-    out.push(`- **Scoring:** signals × value/4 → ${fmtBundle(q.barometer.scaled)}${q.barometer.readinessByValue ? `; readiness by value: ${q.barometer.readinessByValue.join(', ')}` : ''}`);
-  }
-  if (q.format === 'fill' || q.format === 'text') out.push('- **Scoring:** free-text interpreter (Layer 5, supporting evidence only; see matching spec).');
-  if (q.format === 'teamPrefs') out.push('- **Scoring:** Layer 1 explicit preference — curious +0.35, maybe +0.15, not right now = excluded.');
-  if (q.options && q.format !== 'teamPrefs') {
-    out.push('', '| Option | Signals | Notes |', '|---|---|---|');
-    for (const o of q.options) {
-      const notes = [o.neutral ? 'neutral (missing, not negative)' : '', o.optOut ? `explicit opt-out: ${o.optOut}` : ''].filter(Boolean).join('; ');
-      out.push(`| ${esc(o.label)} | ${fmtBundle(o.signals)} | ${notes || '—'} |`);
-    }
+for (const g of gifts) {
+  out.push(`### ${g.name} (${g.reference})`, '', '| ID | Perspective | Statement | Screen |', '|---|---|---|---|');
+  for (const it of allItems.filter((i) => i.gift === g.id)) {
+    const s = screens.find((sc) => sc.kind === 'ratings' && sc.items.some((x) => x.id === it.id))!;
+    out.push(`| \`${it.id}\` | ${it.perspective} | ${esc(it.text)} | \`${s.id}\` (${s.chapter}) |`);
   }
   out.push('');
 }
 
+out.push('## Screens in order', '');
+for (const s of screens) {
+  if (s.kind === 'ratings') {
+    out.push(`### \`${s.id}\` — rating block (${s.chapter})`, '', `**${esc(s.prompt)}**${s.helper ? ` — ${esc(s.helper)}` : ''}`, '');
+    for (const it of s.items) out.push(`- ${esc(it.text)} → *${it.gift}*`);
+  } else {
+    out.push(`### \`${s.id}\` — scenario (${s.chapter})`, '', `*${esc(s.storyLine ?? '')}* **${esc(s.prompt)}**`, '', '| Option | Gift |', '|---|---|');
+    for (const o of s.options) out.push(`| ${esc(o.label)} | ${o.gift} |`);
+  }
+  out.push('');
+}
+
+out.push(
+  '## Design notes',
+  '',
+  '- **Why scenarios:** rating scales invite “everything is very like me.” Scenarios force a choice between seven equally honorable responses, which separates gifts that ratings alone can’t.',
+  '- **Why “others” statements:** gifts are often clearest to the people around us; one observer-perspective item per gift balances self-image.',
+  '- **What an item does NOT prove:** no single answer establishes a gift. Levels come from all three statements plus all scenario choices, and are meant to be discerned with others.',
+  '- **Prophecy wording** is framed as “sense… believe… shared,” never certainty, and is tested under pastoral guidance.',
+  '- **Giving** items concern time, home, and belongings. Nothing asks about money or income.',
+  '- **Known limitations:** three items per gift is short. Expect modest reliability per gift until piloted (see the scoring spec).',
+  '',
+);
+
 writeFileSync(new URL('../docs/02-question-bank.md', import.meta.url), out.join('\n'));
-console.log(`Wrote docs/02-question-bank.md (${questions.length} questions)`);
+console.log(`Wrote docs/02-question-bank.md (${allItems.length} statements, ${screens.length} screens)`);

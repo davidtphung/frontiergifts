@@ -24,20 +24,16 @@ export const site: SiteConfig = {
     'You have a story. You have something to bring. You do not have to have everything figured out. Let’s discover a meaningful place to begin, together.',
   thread: 'You arrive. You notice. You respond. You help make room.',
   scriptureNote:
-    'Gift names follow Romans 12:6–8. Descriptions here are paraphrases, not quotations.',
+    'Gift names follow Romans 12:6–8. Descriptions are paraphrases, not quotations.',
   privacyNotice: [
-    'Your answers stay in this browser tab. Nothing is sent anywhere unless you review it and choose to share.',
-    'You can skip any reflective question.',
-    'Please don’t share private prayer requests, health details, or anything you’d rather keep personal—none of it is needed.',
-    'No contact details are needed to see your results.',
+    'Your answers stay in this browser tab. Nothing is sent anywhere.',
+    'Answer from your everyday life—not who you think you should be.',
+    'You can skip any statement or question.',
+    'No name or contact details are asked for.',
   ],
-  submissionEndpoint: null,
-  askAgeBeforeContact: true,
-  minorContactMessage:
-    'Thanks for exploring! If you’re under 18, please talk with a parent or guardian and a Frontier leader about serving—they’ll help you take a next step.',
   retentionNote:
     'Prototype: nothing is stored on a server. “Save on this device” keeps answers only in this browser until you clear them.',
-  estimatedMinutes: 'About 5–8 minutes (estimate, not yet measured)',
+  estimatedMinutes: 'About 6–8 minutes (estimate, not yet measured)',
 };
 
 export const chapters: Chapter[] = [
@@ -47,42 +43,41 @@ export const chapters: Chapter[] = [
     title: 'You belong in the story',
     thread: 'You arrive.',
     transition:
-      'This isn’t a test, and there are no wrong answers. It’s a short conversation to help you imagine where you might contribute.',
+      'This isn’t a test, and there are no wrong answers. It’s a short reflection on how God has shaped you to build up His Body.',
   },
   {
     id: 'notice',
     number: 2,
     title: 'What do you notice?',
     thread: 'You notice.',
-    transition: 'Sometimes hospitality begins before anyone reaches the door.',
+    transition: 'Sometimes hospitality begins before anyone reaches the door. Start with what you tend to see.',
   },
   {
     id: 'alive',
     number: 3,
     title: 'What brings you to life?',
     thread: 'You notice.',
-    transition:
-      'A clear microphone, a prepared room, and a warm welcome can all help make space for someone else.',
+    transition: 'The things that energize you often point to how God has gifted you.',
   },
   {
     id: 'care',
     number: 4,
     title: 'How do you care?',
     thread: 'You respond.',
-    transition: 'Listening can be a way of serving. So can a meal, a lesson, or a quiet prayer.',
+    transition: 'A few everyday moments. Pick the response that comes most naturally—not the one that sounds best.',
   },
   {
-    id: 'next',
+    id: 'others',
     number: 5,
-    title: 'What could your next step look like?',
+    title: 'How do others see you?',
     thread: 'You help make room.',
-    transition: 'No commitment here. Just a few practical questions so the next step fits your life.',
+    transition: 'Gifts are often clearest to the people around us. Think about what friends and family would say.',
   },
   {
     id: 'begin',
     number: 6,
     title: 'A place to begin',
     thread: 'You help make room.',
-    transition: 'Here are a few places your story could connect.',
+    transition: 'Here is how your gifts could build up the Body at Frontier.',
   },
 ];

@@ -4,67 +4,54 @@
 ```bash
 npm install
 npm run dev        # http://localhost:5173
-npm test           # 51 tests: engine, text interpreter, branching, UI/consent/keyboard
+npm test           # 26 tests: instrument design, scoring, mapping, UI, privacy
 npm run build      # typecheck + static build in dist/
 ```
 The build is a static site. Host `dist/` anywhere. It needs no server or secrets.
 
 ## Project map
 ```
-src/content/      ← everything Frontier edits
-  site.ts           title, identity copy, chapters, privacy notice, submission endpoint
-  teams.ts          six ministry areas + seven gifts
-  questions.ts      question bank (core / follow-up / deeper)
-  signals.ts        free-text lexicon + matching weights (both versioned)
+src/content/      ← what Frontier edits
+  site.ts           title, identity copy, chapters, privacy notice
+  questions.ts      21 statements + 7 scenarios, grouped into 13 screens
+  teams.ts          six teams, seven gifts, gift→team weights
+  scoring.ts        scoring weights + thresholds (versioned)
   types.ts          shared types (mirror db/schema.sql)
-src/engine/       ← pure, deterministic logic (no UI, no network)
-  sequence.ts       branching + follow-up selection
-  scoring.ts        matching engine + results
-  text.ts           free-text interpreter
-  summary.ts        share payload / plain-text summary
+src/engine/       ← pure, deterministic logic
+  scoring.ts        gift scores → levels → team fit → recommendations
   storage.ts        opt-in device storage
-src/components/   ← UI
+src/components/   ← UI (QuestionControls, Results, Chrome)
 src/styles/       tokens.css (brand tokens) + app.css
 docs/             design deliverables (02 is generated)
-db/schema.sql     target relational model
 ```
 
-## Edit questions
-1. Edit `src/content/questions.ts`. Keep `id`s stable. If a question's meaning changes, give it a new id.
-2. Every option's `because` is shown verbatim in results ("You shared that …"). Write it in second person, describing what the person *said*.
-3. Weights: 1 = primary, 0.5 = secondary, 0.3 = light. Mark "not sure" options `neutral: true`. Use `optOut: '<team>'` for explicit "not this team" options.
-4. Bump `QUESTION_BANK_VERSION`, run `npm run docs:questions`, then run `npm test`. The bank tests check for 12 core questions, 24–30 total, required formats, max selections, and that every team and gift is reachable.
+## Edit the gift statements and scenarios
+1. Edit `src/content/questions.ts`.
+   - **Keep exactly 3 statements per gift** (2 self, 1 others) and **one option per gift in every scenario**. Tests enforce both, so no gift gets more chances to score.
+   - **Never mention a team, role, task type, interest in a role, experience, or money.** A test scans all wording for these.
+   - Keep item ids stable. If a statement's meaning changes, give it a new id.
+2. Bump `QUESTION_BANK_VERSION`, run `npm run docs:questions`, then `npm test`.
 
-## Edit ministry descriptions
-`src/content/teams.ts`. `configuredOpportunities` is empty on purpose. Add real, current openings there and the result cards will say "Current opportunities: …" instead of the generic "Connect with the team…". `placementRequirements` holds safeguarding and pastoral wording. It currently has **[Frontier to confirm]** placeholders.
+## Edit teams and the gift→team mapping
+`src/content/teams.ts`. `giftTeamWeights` decides which gifts lead to which teams; see `docs/03-team-gift-mapping.md` for the rationale. `configuredOpportunities` is empty. Add real openings and the cards will show them instead of the generic first step. `placementRequirements` holds **[Frontier to confirm]** placeholders for Kids, Worship, and Prayer.
 
-## Change matching rules
-- **Weights and thresholds:** `matchingWeights` in `src/content/signals.ts`. Bump `version`.
-- **Free-text vocabulary:** `signalLibrary.rules`. A trailing `*` matches word endings. Mark team-defining terms `note: 'teamCore'` so negations of them become opt-outs. Never add `give`, `listen`, or `lead` alone. Bump `version`.
-- The formula and its rationale are in `docs/04-matching-spec.md`. Add a fixture in `src/test/fixtures.ts` for any behavior you change.
+## Change scoring
+`src/content/scoring.ts`: the rating/scenario blend, level thresholds, minimum evidence, and tie and "also" thresholds. Bump `version`. The formula is in `docs/04-scoring-spec.md`. Fixtures in `src/test/fixtures.ts` build answer sets from a gift profile, which makes it easy to add a test for any change.
 
 ## Change the look
-`src/styles/tokens.css` holds fonts, colors, border weight, and spacing. The current values are *inspired by* frontierchurch.us: black and white, Bebas Neue for display, letter-spaced Josefin Sans, square 2px outlined buttons, and a teal accent darkened for contrast. They are not Frontier's official brand specs. No logos or photos are used. The wordmark is text and is set in `site.wordmark`.
+`src/styles/tokens.css`. The tokens are inspired by frontierchurch.us. They are not official brand specs.
 
-## Review privacy behavior
+## Privacy behavior
 | Check | Where |
 |---|---|
-| No network calls in the participant flow | `App.test.tsx` stubs `fetch` and `sendBeacon` and asserts zero calls through results and share |
-| Results without contact details | `App.test.tsx` |
-| Consent required before review; nothing sent without an endpoint | `Share.tsx`, `App.test.tsx` |
-| Contact separated from assessment | `summary.ts`, `db/schema.sql` |
-| Under-18 → no contact fields | `site.askAgeBeforeContact`, `App.test.tsx` |
+| No network calls during the inventory or results | `App.test.tsx` (stubs `fetch`/`sendBeacon`) and a real-browser check |
+| No names, contact details, or team questions anywhere in the flow | `App.test.tsx`, `scoring.test.ts` |
 | Device storage opt-in only, erased when turned off | `storage.ts`, `App.test.tsx` |
-| No analytics, trackers, or external AI | none are installed. Only Google Fonts loads externally (see open decisions). |
-| No raw answers in logs | the code contains no `console.log` |
+| No analytics, trackers, or AI. Google Fonts is the only external request. | — |
 
-To enable real submission later, set `site.submissionEndpoint` to an HTTPS endpoint Frontier controls, after a privacy review. Until then the share step produces a local download or copy only.
-
-## What needs Frontier's review before launch
-- Every identity and shared-heart statement, and the tagline. The site currently reads "Renewing the beauty of Jesus on the frontiers of modern culture", while the brief says "Revealing… at the frontiers of culture".
-- Team descriptions, first steps, and especially the **Kids Ministry safeguarding** and **Worship/Prayer pastoral-guidance** wording.
-- Gift paraphrases and the Romans 12 framing, including the theological review of the prophecy wording.
-- The age policy and the minors message.
-- Retention periods, who may see shared summaries, and the submission destination.
-- Thresholds, after a small pilot.
-- Whether self-hosted fonts are preferred over Google Fonts. Google Fonts makes a third-party request on page load.
+## Before launch, Frontier should review
+- Every statement and scenario, theologically and pastorally, especially the prophecy wording.
+- The gift→team weights.
+- The Kids safeguarding wording and the Worship/Prayer pastoral-guidance wording.
+- A pilot to check reliability per gift and to calibrate thresholds.
+- The tagline. The website and the brief differ: "Renewing… modern culture" vs "Revealing… culture".

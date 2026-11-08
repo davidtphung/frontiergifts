@@ -1,35 +1,27 @@
-# D. Team ↔ gift mapping
+# D. Gift → team mapping
 
-Seven gifts (Romans 12:6–8) are explored across six serving areas. The mapping below lists **proposed ministry applications**. They are not assignments mandated by Scripture. Every gift can contribute to every team.
+The engine recommends teams **only** from the gift profile, using these weights (`giftTeamWeights` in `src/content/teams.ts`). A weight of 1 means the gift is central to how the team serves. A blank means the gift is not weighted for that team, though it can still contribute in practice. These are **proposed ministry applications** for Frontier to confirm, not scriptural assignments.
 
 | Team | Prophecy | Serving | Teaching | Encouragement | Giving | Leadership | Mercy |
 |---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
-| Tech and AV | | ● | | ● | ○ | ● | |
-| Welcome Team | | ● | | ● | ○ | ● | ● |
-| Setup and Breakdown | | ● | | | ○ | ● | |
-| Worship | ●† | ● | ● | ● | ○ | ● | |
-| Kids Ministry | ●‡ | ● | ● | ● | ○ | ● | ● |
-| Prayer Ministry | ●† | ● | | ● | ○ | | ● |
+| Tech and AV | | **1.0** | | 0.3 | 0.2 | 0.6 | |
+| Welcome Team | | 0.5 | | **1.0** | 0.4 | 0.3 | 0.8 |
+| Setup and Breakdown | | **1.0** | | | 0.3 | 0.7 | |
+| Worship | 0.9 | 0.4 | 0.5 | 0.8 | | 0.5 | |
+| Kids Ministry | 0.3 | 0.4 | **1.0** | 0.7 | | 0.4 | 0.6 |
+| Prayer Ministry | 0.9 | 0.3 | | 0.7 | | | **1.0** |
 
-● = proposed connection, shown on result cards when the participant's own answers also suggest that gift.
-○ = Giving, which travels with a person across every team (see below).
-† = under pastoral guidance. The tool cannot verify a prophetic gift.
-‡ = with age-appropriate care and pastoral guidance.
+## Rationale
+- **Tech and AV:** serving through quiet excellence in the details. Leadership helps coordinate during live moments. Encouragement keeps people at the center.
+- **Welcome:** encouragement and mercy are the heart of making people feel seen. Giving reflects hospitality's generosity.
+- **Setup and Breakdown:** serving and leadership (planning, coordinating teams, smooth transitions).
+- **Worship:** prophetic sensitivity and encouragement lead the congregation, teaching roots worship in Scripture, and leadership guides the team. Prophecy applies under pastoral guidance.
+- **Kids Ministry:** teaching (Scripture for children), encouragement, and mercy (patient care). Prophecy has a lighter weight, applied with age-appropriate care.
+- **Prayer:** mercy (compassionate listening), prophecy (attentiveness to the Lord, under pastoral guidance), and encouragement.
 
-## Distinctions the engine enforces
+## Giving
+Giving is measured like any other gift. Its items concern time, home, and belongings, and **never money or income**. Because generosity strengthens every area, it carries modest weight on Welcome (hospitality), Setup, and Tech. A participant with a strong Giving gift sees it ranked in their profile even when it isn't the main driver of a team recommendation. Whether Frontier wants a Giving-specific next step is an open decision.
 
-| Distinction | How |
-|---|---|
-| Gifts, skills, interests, learning, readiness, and availability are separate | Separate signal channels (`gifts`, `skills`, `teams`, `learning`, `readiness`, `practical`). Availability and readiness never touch gift or team scores. |
-| Hospitality and prayer shape the experience but are not Romans 12 gifts | They appear as team areas and values, never in the gift list. |
-| Musical skill is not a gift | Music is a `skill`. Worship fit comes from interest. The off-platform option is an explicit opt-out. |
-| Giving ≠ wealth ≠ generic "giving back" | No amounts are ever asked. `f_giving` asks what generosity *looks like* (time, home, meeting needs). The word "give" alone is never a signal. "Giving back" language is shared-heart copy and is never measured. |
-| Gift vocabulary ≠ team vocabulary | Gift text rules are separate (`gift.*`). "Listen" never implies prophecy, "lead" never implies leadership, and "give" never implies giving. |
-| Hospitality ≠ extroversion | Quiet and one-to-one welcome options carry full Welcome weight. |
-| Kids interest ≠ approval | Safeguarding requirements show on every Kids card. |
-| Technical interest ≠ experience | Curiosity (barometer) feeds fit. Comfort (follow-up) feeds only the first-step wording. |
-
-## How giving is represented
-- **Reflection:** Giving shows in the gift list when supported by `c4_gifts`, `c4_friend`, `f_giving`, or `d_stall`. The result adds: *"Not tied to income or to one team. Generosity of time, home, skill, and resources can strengthen every area."*
-- **Team effect:** None, except "opening my home or sharing a meal" adds a light Welcome signal, because hospitality and generosity overlap in practice.
-- **Open decision:** Whether Frontier wants a non-Sunday "ways to give" next step. See `07-open-decisions.md`.
+## Coverage checks (tested)
+- Every team draws on at least two gifts.
+- Every gift is weighted on at least one team.

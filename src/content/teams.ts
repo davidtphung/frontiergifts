@@ -1,5 +1,19 @@
 import type { Gift, GiftId, Team, TeamId } from './types';
 
+/**
+ * Gift → team relevance weights (0–1). These are proposed ministry
+ * applications agreed by the team, NOT scriptural assignments. Every gift can
+ * contribute anywhere; the weights say where a gift is most central.
+ */
+export const giftTeamWeights: Record<TeamId, Partial<Record<GiftId, number>>> = {
+  tech: { serving: 1, leadership: 0.6, encouragement: 0.3, giving: 0.2 },
+  welcome: { encouragement: 1, mercy: 0.8, serving: 0.5, giving: 0.4, leadership: 0.3 },
+  setup: { serving: 1, leadership: 0.7, giving: 0.3 },
+  worship: { prophecy: 0.9, encouragement: 0.8, teaching: 0.5, leadership: 0.5, serving: 0.4 },
+  kids: { teaching: 1, encouragement: 0.7, mercy: 0.6, serving: 0.4, leadership: 0.4, prophecy: 0.3 },
+  prayer: { mercy: 1, prophecy: 0.9, encouragement: 0.7, serving: 0.3 },
+};
+
 /** Ministry source of truth for this project. Edit descriptions here. */
 export const teams: Team[] = [
   {
@@ -19,7 +33,6 @@ export const teams: Team[] = [
       'Collaborating with Worship and other teams',
       'Keeping people, not technology, at the center',
     ],
-    giftConnections: ['serving', 'leadership', 'encouragement'],
     distinctions: [
       'Technical interest and technical experience are separate signals. Curious beginners are welcome.',
     ],
@@ -41,7 +54,6 @@ export const teams: Team[] = [
       'Moving beyond greeting toward belonging',
       'Welcoming without overwhelming',
     ],
-    giftConnections: ['encouragement', 'mercy', 'serving', 'leadership'],
     distinctions: [
       'Hospitality is not the same as extroversion. Quiet, attentive people can be excellent at welcoming.',
     ],
@@ -63,7 +75,6 @@ export const teams: Team[] = [
       'Coordinating with other teams for smooth transitions',
       'Restoring spaces after gatherings',
     ],
-    giftConnections: ['serving', 'leadership'],
     distinctions: [
       'Not every role requires heavy lifting—organization, signage, coordination, and prep matter too.',
     ],
@@ -86,7 +97,6 @@ export const teams: Team[] = [
       'Teamwork, humility, and musical growth',
       'Collaborating with Tech and AV',
     ],
-    giftConnections: ['encouragement', 'serving', 'leadership', 'teaching', 'prophecy'],
     distinctions: [
       'Musical skill is tracked separately; it is not one of the Romans 12 gifts.',
       'This tool cannot verify a prophetic gift or certify anyone for worship leadership.',
@@ -111,7 +121,6 @@ export const teams: Team[] = [
       'Partnering with parents and families',
       'Safe, welcoming environments',
     ],
-    giftConnections: ['teaching', 'encouragement', 'mercy', 'serving', 'leadership', 'prophecy'],
     distinctions: [
       'Children are part of the church today, not only the church of tomorrow.',
       'A suggestion here is not approval to work with children.',
@@ -136,7 +145,6 @@ export const teams: Team[] = [
       'Connecting people with pastoral support',
       'Behind-the-scenes intercession',
     ],
-    giftConnections: ['mercy', 'encouragement', 'serving', 'prophecy'],
     distinctions: [
       'Praying aloud confidently is not a measure of maturity. Quiet, faithful intercession is meaningful service.',
     ],
@@ -153,50 +161,49 @@ export const gifts: Gift[] = [
     name: 'Prophecy',
     reference: 'Romans 12:6',
     paraphrase: 'Sharing what God may be saying, in proportion to faith.',
-    acrossTeams: 'Often grows through prayer and Scripture, and is tested under pastoral guidance.',
+    inPractice: 'Attentive to the Lord; often senses what God is highlighting and shares it to strengthen others—tested and grown under pastoral guidance.',
   },
   {
     id: 'serving',
     name: 'Serving',
     reference: 'Romans 12:7',
     paraphrase: 'Meeting practical needs so the Body can flourish.',
-    acrossTeams: 'Shows up on every team—often in the details no one sees.',
+    inPractice: 'Notices what needs doing and quietly does it; finds joy in the details others overlook.',
   },
   {
     id: 'teaching',
     name: 'Teaching',
     reference: 'Romans 12:7',
     paraphrase: 'Helping others understand and live God’s truth.',
-    acrossTeams: 'Can serve children, new team members, and the wider church.',
+    inPractice: 'Loves digging into Scripture and making it clear, so others understand and grow.',
   },
   {
     id: 'encouragement',
     name: 'Encouragement',
     reference: 'Romans 12:8',
     paraphrase: 'Strengthening and urging others on in faith.',
-    acrossTeams: 'Lifts teams and congregations alike.',
+    inPractice: 'Sees the good in people, speaks hope, and helps others keep going.',
   },
   {
     id: 'giving',
     name: 'Giving',
     reference: 'Romans 12:8',
     paraphrase: 'Sharing generously and with sincerity.',
-    acrossTeams:
-      'Not tied to income or to one team. Generosity of time, home, skill, and resources can strengthen every area.',
+    inPractice: 'Quick to share time, home, and resources so others are provided for. Not about the size of a gift or income.',
   },
   {
     id: 'leadership',
     name: 'Leadership',
     reference: 'Romans 12:8',
     paraphrase: 'Leading with diligence and care for others.',
-    acrossTeams: 'Helps teams coordinate, grow, and serve well together.',
+    inPractice: 'Sees where a group needs to go and helps people move there together.',
   },
   {
     id: 'mercy',
     name: 'Mercy',
     reference: 'Romans 12:8',
     paraphrase: 'Showing compassion, with cheerfulness.',
-    acrossTeams: 'Notices and stays with people who are hurting or alone.',
+    inPractice: 'Drawn to people who are hurting or overlooked, and able to stay with them in it.',
   },
 ];
 
